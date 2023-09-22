@@ -1,0 +1,145 @@
+Names,Prediction accuracy
+strengthweighted0.5abs,0.3227356606213898
+betweennness centralityweighted0.5abs,0.32816281212175114
+clusteringweighted0.5abs,0.3463626014120448
+eigenvector centralityweighted0.5abs,0.3272864517146735
+local efficiencyweighted0.5abs,0.34660346702722045
+global efficiencyweighted0.5abs,0.0002780441912417775
+modularityweighted0.5abs,0.0039175088281971915
+participation coefficientweighted0.5abs,0.002174983013353615
+strengthbinarize0.5abs,0.3283727160032395
+betweennness centralitybinarize0.5abs,0.31193593602682934
+clusteringbinarize0.5abs,0.34643650188151387
+eigenvector centralitybinarize0.5abs,0.32789220362531923
+local efficiencybinarize0.5abs,0.3481814815244336
+global efficiencybinarize0.5abs,0.027769675330101218
+modularitybinarize0.5abs,0.009684259543524365
+participation coefficientbinarize0.5abs,1.8443948325730375e-05
+strengthweighted0.3abs,0.33096198938800925
+betweennness centralityweighted0.3abs,0.3356092081791623
+clusteringweighted0.3abs,0.36978688332066956
+eigenvector centralityweighted0.3abs,0.34127698468969925
+local efficiencyweighted0.3abs,0.37038582420298305
+global efficiencyweighted0.3abs,0.00027141903098870657
+modularityweighted0.3abs,0.003334328282724841
+participation coefficientweighted0.3abs,0.003181381551461304
+strengthbinarize0.3abs,0.32573549286805314
+betweennness centralitybinarize0.3abs,0.31515508685748217
+clusteringbinarize0.3abs,0.3700413145144562
+eigenvector centralitybinarize0.3abs,0.33243021288223584
+local efficiencybinarize0.3abs,0.3676903487702534
+global efficiencybinarize0.3abs,0.00021250483781709573
+modularitybinarize0.3abs,0.008919574479413384
+participation coefficientbinarize0.3abs,0.0
+strengthweighted0.1abs,0.32899066086489637
+betweennness centralityweighted0.1abs,0.2936327078677571
+clusteringweighted0.1abs,0.3020141480683215
+eigenvector centralityweighted0.1abs,0.35649105247581825
+local efficiencyweighted0.1abs,0.3361079700108116
+global efficiencyweighted0.1abs,2.263848017269865e-06
+modularityweighted0.1abs,0.00013117972772258568
+participation coefficientweighted0.1abs,0.004515930131528956
+strengthbinarize0.1abs,0.32966580144891744
+betweennness centralitybinarize0.1abs,0.31730788795108567
+clusteringbinarize0.1abs,0.2893076881558361
+eigenvector centralitybinarize0.1abs,0.3461315855046765
+local efficiencybinarize0.1abs,0.31268362543843087
+global efficiencybinarize0.1abs,0.003017939867456687
+modularitybinarize0.1abs,9.488173263738631e-07
+participation coefficientbinarize0.1abs,0.0023087726282219334
+strengthweighted0.5keep,0.32131581564818334
+betweennness centralityweighted0.5keep,0.24215084257740016
+clusteringweighted0.5keep,0.3483665372436595
+eigenvector centralityweighted0.5keep,0.34169919904754953
+local efficiencyweighted0.5keep,0.2663075908661273
+global efficiencyweighted0.5keep,0.00595209082540149
+modularityweighted0.5keep,3.754337651473705e-05
+participation coefficientweighted0.5keep,0.006354496676262422
+strengthbinarize0.5keep,0.29517426687424786
+betweennness centralitybinarize0.5keep,0.32009078294553517
+clusteringbinarize0.5keep,0.3085761194335849
+eigenvector centralitybinarize0.5keep,0.29469149417569507
+local efficiencybinarize0.5keep,0.3085930015505808
+global efficiencybinarize0.5keep,0.0030632451400728344
+modularitybinarize0.5keep,0.0030447983250382338
+participation coefficientbinarize0.5keep,0.0011987880596316947
+strengthweighted0.3keep,0.34008547162435154
+betweennness centralityweighted0.3keep,0.2826499830585747
+clusteringweighted0.3keep,0.3383410890867957
+eigenvector centralityweighted0.3keep,0.34204583609011874
+local efficiencyweighted0.3keep,0.3613123377084164
+global efficiencyweighted0.3keep,9.295783729679208e-05
+modularityweighted0.3keep,0.00024038296319295327
+participation coefficientweighted0.3keep,0.005976665428369277
+strengthbinarize0.3keep,0.31650412748811985
+betweennness centralitybinarize0.3keep,0.26924206925584815
+clusteringbinarize0.3keep,0.2939158568042721
+eigenvector centralitybinarize0.3keep,0.34355570469275865
+local efficiencybinarize0.3keep,0.2961269682790668
+global efficiencybinarize0.3keep,5.1002910900543874e-05
+modularitybinarize0.3keep,0.001996347383970476
+participation coefficientbinarize0.3keep,0.0032444086048247778
+strengthweighted0.1keep,0.3407274085494759
+betweennness centralityweighted0.1keep,0.2845701314847875
+clusteringweighted0.1keep,0.2928413117245364
+eigenvector centralityweighted0.1keep,0.37649290481474385
+local efficiencyweighted0.1keep,0.31138790168752783
+global efficiencyweighted0.1keep,1.971546967582949e-05
+modularityweighted0.1keep,7.237564388917761e-07
+participation coefficientweighted0.1keep,0.00847975400090728
+strengthbinarize0.1keep,0.3328597032909555
+betweennness centralitybinarize0.1keep,0.30417808136901914
+clusteringbinarize0.1keep,0.2790248571152928
+eigenvector centralitybinarize0.1keep,0.3276205190265131
+local efficiencybinarize0.1keep,0.2935827587798351
+global efficiencybinarize0.1keep,0.0014833685185059453
+modularitybinarize0.1keep,8.380546624064955e-05
+participation coefficientbinarize0.1keep,0.0002990378724598841
+strengthweighted0.5zero,0.32199819950138364
+betweennness centralityweighted0.5zero,0.2827976617370258
+clusteringweighted0.5zero,0.3650596853127439
+eigenvector centralityweighted0.5zero,0.3423767302731002
+local efficiencyweighted0.5zero,0.37144004272361353
+global efficiencyweighted0.5zero,9.291368218000695e-05
+modularityweighted0.5zero,6.868521087288748e-05
+participation coefficientweighted0.5zero,0.006354496676262422
+strengthbinarize0.5zero,0.28960376051997694
+betweennness centralitybinarize0.5zero,0.3254820389145122
+clusteringbinarize0.5zero,0.32422673998199014
+eigenvector centralitybinarize0.5zero,0.293797898854408
+local efficiencybinarize0.5zero,0.32425246915325234
+global efficiencybinarize0.5zero,0.0011536394716661347
+modularitybinarize0.5zero,0.0005446663464253598
+participation coefficientbinarize0.5zero,0.0020757704225365936
+strengthweighted0.3zero,0.34008547162435154
+betweennness centralityweighted0.3zero,0.2826499830585747
+clusteringweighted0.3zero,0.3383410890867957
+eigenvector centralityweighted0.3zero,0.34204583609011874
+local efficiencyweighted0.3zero,0.3613123377084164
+global efficiencyweighted0.3zero,9.295783729679208e-05
+modularityweighted0.3zero,0.00024038296319295327
+participation coefficientweighted0.3zero,0.005976665428369277
+strengthbinarize0.3zero,0.31650412748811985
+betweennness centralitybinarize0.3zero,0.26924206925584815
+clusteringbinarize0.3zero,0.2939158568042721
+eigenvector centralitybinarize0.3zero,0.34355570469275865
+local efficiencybinarize0.3zero,0.2961269682790668
+global efficiencybinarize0.3zero,5.1002910900543874e-05
+modularitybinarize0.3zero,0.001996347383970476
+participation coefficientbinarize0.3zero,0.0032444086048247778
+strengthweighted0.1zero,0.3407274085494759
+betweennness centralityweighted0.1zero,0.2845701314847875
+clusteringweighted0.1zero,0.2928413117245364
+eigenvector centralityweighted0.1zero,0.37649290481474385
+local efficiencyweighted0.1zero,0.31138790168752783
+global efficiencyweighted0.1zero,1.971546967582949e-05
+modularityweighted0.1zero,7.237564388917761e-07
+participation coefficientweighted0.1zero,0.00847975400090728
+strengthbinarize0.1zero,0.3328597032909555
+betweennness centralitybinarize0.1zero,0.30417808136901914
+clusteringbinarize0.1zero,0.2790248571152928
+eigenvector centralitybinarize0.1zero,0.3276205190265131
+local efficiencybinarize0.1zero,0.2935827587798351
+global efficiencybinarize0.1zero,0.0014833685185059453
+modularitybinarize0.1zero,8.380546624064955e-05
+participation coefficientbinarize0.1zero,0.0002990378724598841
