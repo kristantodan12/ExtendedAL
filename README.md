@@ -4,6 +4,11 @@ This repository contains an extension of the active learning method proposed by 
 
 [1] J. Dafflon et al., “A guided multiverse study of neuroimaging analyses,” Nat. Commun., vol. 13, no. 1, 2022, doi: 10.1038/s41467-022-31347-8.
 
+Copyright (c) 2020, Jessica Dafflon, Pedro F. Da Costa, František Váša, Ricardo Pio Monti,
+Danilo Bzdok, Peter J. Hellyer, Federico Turkheimer, Jonathan Smallwood, Emily Jones, and Robert Leech
+All rights reserved.
+
+
 [2] A. A. Igolkina and G. Meshcheryakov, “semopy: A Python Package for Structural Equation Modeling,” Struct. Equ. Model. A Multidiscip. J., vol. 27, no. 6, pp. 952–963, Nov. 2020, doi: 10.1080/10705511.2019.1704289.
 
 [3]	G. Meshcheryakov, A. A. Igolkina, and M. G. Samsonova, “semopy 2: A structural equation modeling package with random effects in python,” arXiv Prepr. arXiv2106.01140, 2021.
