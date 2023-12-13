@@ -1,12 +1,8 @@
-"""
-This code is am extension of previously proposed method to navigate the results of a multiverse analysis created by Dafflon and colleagues (2022).
-The extension implemented in this version is apporaches to handle the combination of brain-wide and region-specific graph measures and to allow
-the use of Structural Equation Modeling to infer latent variables.
-FOr details, please read the corresponding paper and the original paper proposing the study:
-Dafflon et al., “A guided multiverse study of neuroimaging analyses,” Nat. Commun., vol. 13, no. 1, 2022, doi: 10.1038/s41467-022-31347-8.
-"""
+""" Multiverse-brain-substanse use
+This file is the main file for running multiverse analysis
+on the association between graph measures derived from fMRI data
+and substanse use-related variables/
 
-"""
 #1. Setting up environment
 ##Importing packages 
 """
@@ -24,15 +20,16 @@ import matplotlib.pyplot as plt
 import tqdm
 import copy
 import os
-
+import scipy.io as sio
 
 """
 ##Defining paths
 """
 # %% Define paths
+dataset = 'ABCD'
 PROJECT_ROOT = Path.cwd()
-data_path = PROJECT_ROOT / 'data' ##Location of data
-output_path = PROJECT_ROOT / 'output' ##Location of output
+data_path = PROJECT_ROOT / dataset / 'Data'
+output_path = PROJECT_ROOT / dataset / 'Output'
 if not output_path.is_dir():
     output_path.mkdir(parents=True)
 
@@ -48,44 +45,41 @@ def get_data():
     rng = np.random.default_rng(2)
     random.seed(2)
     PROJECT_ROOT = Path.cwd()
-    data_path = PROJECT_ROOT / 'data' ##Location of data
-    output_path = PROJECT_ROOT / 'output' ##Location of output
+    data_path = PROJECT_ROOT / dataset / 'Data'
+    output_path = PROJECT_ROOT / dataset / 'Output'
     if not output_path.is_dir():
         output_path.mkdir(parents=True)
 
     ## Graph measures
-    graph_meas = pickle.load(open(str(data_path / "Graph_measures.p"), "rb" ) ) #Read the data of graph measures from all forking paths size [Number of subjects,Number of forking paths,Number of brain regions]
+    graph_meas = pickle.load(open(str(data_path / "Graph_measures.p"), "rb" ) )
     graph_meas = np.transpose(graph_meas, (1,2,0))
 
     ## Behavior
-    Y = pd.read_csv((str(data_path / 'pers.csv'))) #Read the observed variables for SEM
+    Y = pd.read_csv((str(data_path / 'behav.csv'))) 
+
 
 
     ## Other related data
-    NetworkID = pd.read_csv((str(data_path / '18_Yeo_Network.txt')), sep='\s+', header=None) #Read the network ID for the brain
-    NetworkID = NetworkID.iloc[:, 1]
-    Pipeline = pickle.load(open(str(data_path / "Pipeline.p"), "rb" ) ) #Read the dictionary of the pipeline
+    NetworkID = sio.loadmat(str(data_path/ 'label'))
+    NetworkID = NetworkID['label']
 
-    ## Matching ID
-    SubjectID_FC = pd.read_csv((str(data_path / 'subject_list_main_analysis.txt')), sep='\s+', header=None)
-    SubjectID_Y = pd.read_csv((str(data_path / 'pers_ID.txt')), sep='\s+', header=None)
-    whereID = SubjectID_FC.index.isin(SubjectID_Y.index)
-    graph_meas = graph_meas[:,:,whereID]
+    Pipeline = pickle.load(open(str(data_path / "Pipeline.p"), "rb" ) )
 
     n_regions = graph_meas.shape[1]
     n_subject = graph_meas.shape[2]
 
 
+
     ## Partitioning data
     SpaceDefineIdx = 200
     LockBoxDataIdx = 400
-    RandomIndexes = rng.choice(SubjectID_Y.shape[0], size=SubjectID_Y.shape[0], replace=False)
+    RandomIndexes = rng.choice(n_subject, size=n_subject, replace=False)
     GMModelSpace = graph_meas[:, :, RandomIndexes[0:SpaceDefineIdx]]
     GMLockBoxData = graph_meas[:, :, RandomIndexes[SpaceDefineIdx:LockBoxDataIdx]]
     GMPrediction = graph_meas[:, :, RandomIndexes[LockBoxDataIdx:]]
-    YModelSpace = Y.iloc[RandomIndexes[0:SpaceDefineIdx], 1:]
-    YLockBoxData = Y.iloc[RandomIndexes[SpaceDefineIdx:LockBoxDataIdx], 1:]
-    YPrediction = Y.iloc[RandomIndexes[LockBoxDataIdx:], 1:]
+    YModelSpace = Y.iloc[RandomIndexes[0:SpaceDefineIdx], :]
+    YLockBoxData = Y.iloc[RandomIndexes[SpaceDefineIdx:LockBoxDataIdx], :]
+    YPrediction = Y.iloc[RandomIndexes[LockBoxDataIdx:], :]
 
     return NetworkID, n_regions, n_subject, GMModelSpace, GMLockBoxData, GMPrediction, \
            YModelSpace, YLockBoxData, YPrediction, Pipeline
@@ -96,9 +90,7 @@ NetworkID, n_regions, n_subject, GMModelSpace, GMLockBoxData, GMPrediction, \
 
 """
 #2. Building the space 
-#This step will compute the the correlation of of the pipelines (bottom-left matrix of Fig. 1).
-Here is the first extension of the original study allowing the combination of both brain-wide and region-specific
-graph measures.
+#This step will compute the graph measures for each individuals across pipelines and the space.
 """
 
 # %% Computing graph measures
@@ -107,8 +99,8 @@ GM = GMModelSpace
 n_subject = GM.shape[2]
 n_regions = GM.shape[1]
 
-mat_corr = np.zeros((419, 144, 144))
-for a in range(419):
+mat_corr = np.zeros((n_regions, 144, 144))
+for a in range(n_regions):
     for p1 in range(144):
         for p2 in range (144):
             r = np.corrcoef(GM[p1, a, :], GM[p2, a, :])[0,1]
@@ -123,6 +115,7 @@ def reverse_fisher_transform(matrix):
 transformed_mat = fisher_transform(mat_corr)
 average_transformed_matrix = np.mean(transformed_mat, axis=0)
 avg_mat_corr = reverse_fisher_transform(average_transformed_matrix)
+avg_mat_corr = np.nan_to_num(avg_mat_corr)
 
 
 pickle.dump( avg_mat_corr, open(str(output_path / "graph_corr_with_fisher.p"), "wb" ) )
@@ -130,7 +123,6 @@ pickle.dump( avg_mat_corr, open(str(output_path / "graph_corr_with_fisher.p"), "
 
 """
 #3. Space reduction
-This step reduce the diemsnion of the similarity matrix fomr (Number of forking paths, Number of forking paths) to (Number of forking paths, 2)
 """
 # %% reading the space data
 from sklearn import manifold, datasets
@@ -154,7 +146,7 @@ import phate
 from sklearn.decomposition import PCA
 
 # Load the previous results
-Results = pickle.load(open(str(output_path / "graph_corr_with_fisher.p"), "rb" ) ) # Read the similarity matrix
+Results = pickle.load(open(str(output_path / "graph_corr_with_fisher.p"), "rb" ) )
 BCT_Run = pipeline['BCT']
 weight_Run = pipeline['Weight']
 threshold_Run = pipeline['Threshold']
@@ -187,7 +179,7 @@ methods['PHATE'] = phate.PHATE()
 methods['PCA'] = PCA(n_components=2)
 
 markers      = ["v", "s", "o", "*", "D", "1", "x", "H"]                          # Graph Measures
-colourmaps   = {"weighted": "YlGn", "binarize": "Purples"}                    # Weighted and binarize
+colourmaps   = {"weighted": "Oranges", "binarize": "Purples"}                    # Weighted and binarize
 hatches      = {"abs": "--", "keep": "||", "zero": "**"}                         # Negative values
 
 BCT = np.array(list(BCT_Run.items()))[:,1]
@@ -279,7 +271,9 @@ methods['MDS'] = manifold.MDS(n_components, max_iter=100, n_init=10,
 Y = methods['MDS'].fit_transform(X)
 data_reduced['MDS'] = Y
 
-pickle.dump( data_reduced, open(str(output_path / "embeddings.p"), "wb" ) )
+#pickle.dump( data_reduced, open(str(output_path / "embeddings_with_fisher.p"), "wb" ) )
+
+data_reduced = pickle.load(open(str(output_path / "embeddings_with_fisher.p"), "rb" ) )
 
 Y = data_reduced['MDS']
 figMDS = plt.figure(constrained_layout=False, figsize=(21, 15))
@@ -320,14 +314,14 @@ for id_neg, neg in enumerate(preprocessing):
 
             # Create a legend handle for the bct_model marker and add it to marker_legend_handles
             Lines[idx_bct] = (mlines.Line2D([], [], color='black', linestyle='None',
-                                                marker=markers[idx_bct],  markersize=10, label=bct_model))
+                                                marker=markers[idx_bct],  markersize=15, label=bct_model))
     HatchPatch[id_neg] = mpatches.Patch(facecolor=[0.1, 0.1, 0.1],
                                                 hatch = hatches[neg],
                                                 label = neg,
                                                 alpha = 0.1)
 
 # Define legend patches here (outside of the loop)
-OrangePatch = mpatches.Patch(color='yellow', label='Weighted network')
+OrangePatch = mpatches.Patch(color='orange', label='Weighted network')
 PurplePatch = mpatches.Patch(color=[85 / 255, 3 / 255, 152 / 255], label='Binarized network')
 
 IntensityPatch1 = mpatches.Patch(color=[0.1, 0.1, 0.1], label='threshold: 0.5', alpha=1)
@@ -343,12 +337,12 @@ figMDS.legend(handles=[HatchPatch[0], HatchPatch[1], HatchPatch[2], BlankLine,
                        IntensityPatch2, IntensityPatch3,BlankLine, 
                        Lines[0],Lines[1],Lines[2],Lines[3],Lines[4],Lines[5],
                        Lines[6], Lines[7]],fontsize=15,
-                       frameon=False,bbox_to_anchor=(1.05, 0.7))
+                       frameon=False,bbox_to_anchor=(0.9, 0.7))
 
 
  
 figMDS.savefig(str(output_path / 'MDSSpace_with_fisher.png'), dpi=300)
-figMDS.savefig(str(output_path /'MDSSpace_with_fisher.svg'), format="svg")
+#figMDS.savefig(str(output_path /'MDSSpace_with_fisher.svg'), format="svg")
 
 
 # Save results form the embedding to be used in the remaining analysis
@@ -414,7 +408,6 @@ plt.show()
 # %%
 """
 #4. Exhaustive Search
-This step manually explore all the forking paths to obtain "true prediction performance"
 """
 from bayes_opt import BayesianOptimization, UtilityFunction
 from sklearn.gaussian_process.kernels import Matern, WhiteKernel
@@ -439,16 +432,17 @@ negative_Run = pipeline['Negative']
 
 # Load embedding results. This cell is only necessary if you are running this
 # part of the analysis separatly.
-ModelEmbeddings = pickle.load(open(str(output_path / "embeddings.p"), "rb" ) )
+ModelEmbeddings = pickle.load(open(str(output_path / "embeddings_with_fisher.p"), "rb" ) )
 ModelEmbedding = ModelEmbeddings['MDS']
 
 PredictedVar = np.zeros((len(negative_Run)))
+##Only taking one score
 YPred = YPrediction
 
 
 for i in tqdm(range(len(negative_Run))):
     TempGM = pipeline["BCT"][i]
-    tempPredVar = sem_regression(i, YPred, GMPrediction, output_guar, TempGM, AL=0)
+    tempPredVar = sem_regression(i, YPred, GMPrediction, output_path, TempGM, NetworkID)
     PredictedVar[i] = tempPredVar
 
 #Display how predicted accuracy is distributed across the low-dimensional space
@@ -459,11 +453,8 @@ plt.colorbar()
 pickle.dump(PredictedVar, open(str(output_path / 'predictedVar.pckl'), 'wb'))
 
 
-"""
+# %%
 #5. Active Learning
-This step performs the active learning
-"""
-
 
 from itertools import product
 import pickle
@@ -480,7 +471,7 @@ from sklearn.pipeline import Pipeline
 
 from helper import (initialize_bo, run_bo, posterior, 
                              posteriorOnlyModels, display_gp_mean_uncertainty,
-                             plot_bo_estimated_space, plot_bo_evolution, plot_bo_repetions)
+                             plot_bo_estimated_space, plot_bo_evolution, plot_bo_repetions, sem_regression)
 
 NetworkID, n_regions, n_subject, GMModelSpace, GMLockBoxData, GMPrediction, \
            YModelSpace, YLockBoxData, YPrediction, pipeline = get_data()
@@ -513,6 +504,7 @@ AL = 1
 YPred = YPrediction
 kappa = 10
 
+
 # Define settings for the analysis
 kernel, optimizer, utility, init_points, n_iter, pbounds, nbrs, RandomSeed = \
                       initialize_bo(ModelEmbedding, kappa)
@@ -522,12 +514,12 @@ kernel, optimizer, utility, init_points, n_iter, pbounds, nbrs, RandomSeed = \
 # analysis approaches. For these suggestions the registered value is set to the
 #  lowest value from the burn in. These points (BadIters) are only used
 # during search but exluded when recalculating the GP regression after search.
-BadIter = run_bo(optimizer, utility, init_points,
+BadIter, temModNum = run_bo(optimizer, utility, init_points,
                  n_iter, pbounds, nbrs, RandomSeed,
                  ModelEmbedding, model_config, 
                  YPred,
                  AL, 
-                 output_path, BCT_Run,
+                 output_path, BCT_Run, NetworkID,
                  verbose=False)
 
 x_exploratory, y_exploratory, z_exploratory, x, y, gp, vmax, vmin = \
@@ -558,12 +550,12 @@ kernel, optimizer, utility, init_points, n_iter, pbounds, nbrs, RandomSeed = \
 # analysis approaches. For these suggestions the registered value is set to the
 #  lowest value from the burn in. These points (BadIters) are only used
 # during search but exluded when recalculating the GP regression after search.
-BadIter = run_bo(optimizer, utility, init_points,
+BadIter, temModNum = run_bo(optimizer, utility, init_points,
                  n_iter, pbounds, nbrs, RandomSeed,
                  ModelEmbedding, model_config, 
                  YPred,
                  AL, 
-                 output_path,
+                 output_path, BCT_Run, NetworkID,
                  verbose=False)
 
 x_exploratory, y_exploratory, z_exploratory, x, y, gp, vmax, vmin = \
@@ -585,7 +577,6 @@ print(f'Spearman correlation {corr}')
 
 """
 #6. Iteration
-This steps performs repetitions to test the robustness of the active learning 
 """
 
 from sklearn.metrics import mean_absolute_error
@@ -605,6 +596,7 @@ ModelActualAccuracyCorrelation = np.zeros(n_repetitions)
 CVPValBestModels = np.zeros(n_repetitions)
 PredictedVarRep = np.zeros(n_repetitions)
 #predictions = np.zeros((n_repetitions, len(AgesLockBoxData)))
+muModEmb_iter = np.zeros((144, n_repetitions))
 
 for DiffInit in range(n_repetitions):
     # Define settings for the analysis
@@ -618,7 +610,7 @@ for DiffInit in range(n_repetitions):
                         ModelEmbedding, model_config, 
                         YPred,
                         AL,
-                        output_guar, BCT_Run,
+                        output_path, BCT_Run, NetworkID,
                         verbose=False)
     gp = GaussianProcessRegressor(kernel=kernel, normalize_y=True,
                                   n_restarts_optimizer=10)
@@ -634,6 +626,7 @@ for DiffInit in range(n_repetitions):
     muModEmb, sigmaModEmb, gpModEmb = posteriorOnlyModels(gp, x_obs, y_obs, z_obs,
                                                       ModelEmbedding)
 
+    muModEmb_iter[:,DiffInit] = muModEmb
     BestModelGPSpace[DiffInit] = muModEmb.max()
     BestModelGPSpaceModIndex[DiffInit] = muModEmb.argmax()
     BestModelEmpirical[DiffInit] = z_obs.max()
@@ -649,12 +642,12 @@ for DiffInit in range(n_repetitions):
     TempPredictionsData = np.transpose(TempPredictionsData, (1,0))
     TempGM = pipeline["BCT"][TempModelNum]
     # Load the Lockbox data
-    tempPredVar = sem_regression(TempModelNum, YLockBoxData, GMLockBoxData, output_guar, TempGM, AL = 2)
+    tempPredVar = sem_regression(TempModelNum, YLockBoxData, GMLockBoxData, output_path, TempGM, NetworkID, AL = 2)
     PredictedVarRep[DiffInit] = tempPredVar
 
 plot_bo_repetions(ModelEmbedding, PredictedAcc, BestModelGPSpaceModIndex,
                   BestModelEmpiricalModIndex, BestModelEmpirical,
-                  ModelActualAccuracyCorrelation, output_guar)
+                  ModelActualAccuracyCorrelation, output_path)
 
 
 import pandas as pd
@@ -672,6 +665,6 @@ repetions_results = {
                       'BestModelEmpirical': BestModelEmpirical,
                       'ModelActualAccuracyCorrelation': ModelActualAccuracyCorrelation
                      }
-pickle.dump( repetions_results, open(str(output_guar / "repetitions_results_with_Fisher.p"), "wb" ) )
+pickle.dump( repetions_results, open(str(output_path / "repetitions_results_with_Fisher.p"), "wb" ) )
 
 print(df_best)

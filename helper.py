@@ -1,11 +1,3 @@
-"""
-This code is am extension of previously proposed method to navigate the results of a multiverse analysis created by Dafflon and colleagues (2022).
-The extension implemented in this version is apporaches to handle the combination of brain-wide and region-specific graph measures and to allow
-the use of Structural Equation Modeling to infer latent variables.
-FOr details, please read the corresponding paper and the original paper proposing the study:
-Dafflon et al., “A guided multiverse study of neuroimaging analyses,” Nat. Commun., vol. 13, no. 1, 2022, doi: 10.1038/s41467-022-31347-8.
-"""
-
 from itertools import product
 import json
 import os
@@ -113,20 +105,22 @@ def get_null_distribution(N, n_neighbors_step):
         null_distribution.append(diss)
     return null_distribution
 
-def sem_regression(TempModelNum, Y, GMPrediction, outputPath, TempGM, AL=0):
-    """
-    This is the second extension of the original approach by integrating Structural Equation Modeling
+def sem_regression(TempModelNum, Y, GMPrediction, outputPath, TempGM,  NetworkID, AL=0):
+    '''This is the second extension of the original approach by integrating Structural Equation Modeling
     with the active learning to infer latent variables as outcomes using Semopy package
     A. A. Igolkina and G. Meshcheryakov, “semopy: A Python Package for Structural Equation Modeling,” Struct. Equ. Model. A Multidiscip. J., vol. 27, no. 6, pp. 952–963, Nov. 2020, doi: 10.1080/10705511.2019.1704289.
     G. Meshcheryakov, A. A. Igolkina, and M. G. Samsonova, “semopy 2: A structural equation modeling package with random effects in python,” arXiv Prepr. arXiv2106.01140, 2021.
-    """
-    # Read the data
-    cold1 = np.arange(51, 84)  
-    cold2 = np.arange(244, 284)  
-    hot = np.arange(400, 419)  
-    hotcold_reg = np.concatenate((cold1, cold2, hot))
+    '''
+    # Run the SEM to predict the variance of the latent variables
+    id_att = np.where(NetworkID == 10) #Dorsal attention, 1 for HCP 10 for ABCD
+    id_att = id_att[0] #0 for ABCD, 1 for HCP 
+    id_fp1 = np.where(NetworkID == 5) #Control1, 2 for HCP, 5 and 6 for ABCD
+    id_fp1 = id_fp1[0] 
+    id_fp2 = np.where(NetworkID == 6) #Control2
+    id_fp2 = id_fp2[0] 
+    attfp_reg = np.concatenate((id_att, id_fp1, id_fp2))
     if TempGM == 'participation coefficient':
-        deg = GMPrediction[TempModelNum,[0,418],:]
+        deg = GMPrediction[TempModelNum,[0,359],:]
         deg = np.transpose(deg, (1,0))
         deg = pd.DataFrame(deg)
     elif TempGM == 'global efficiency' or TempGM == 'modularity':
@@ -136,36 +130,33 @@ def sem_regression(TempModelNum, Y, GMPrediction, outputPath, TempGM, AL=0):
         deg = GMPrediction[TempModelNum,:,:]
         deg = np.transpose(deg, (1,0))
         deg = pd.DataFrame(deg)
-        deg = deg.iloc[:, hotcold_reg]
+        deg = deg.iloc[:, attfp_reg]
     column_mapping = {old_column: f'brain{old_column}' for old_column in deg.columns}
     deg.rename(columns=column_mapping, inplace=True)
     scaler = StandardScaler()
     scaler.fit(deg)
     standardized_deg= scaler.transform(deg)
     deg_standardized = pd.DataFrame(standardized_deg, columns=deg.columns)
+
+    
     brain_columns = [col for col in deg_standardized.columns if 'brain' in col]
-    Y_columns = [col for col in Y.columns if 'section' in col]
     Y.index = range(0, len(Y))
 
     ###Combine dataframe
     data_full = pd.concat([Y, deg_standardized], axis=1)
-    data_alc = data_full.filter(like='aeq').join(data_full.filter(like='brain'))
-
-    ### Define the model
     mod = f"""
-        alc_pos =~ a*aeq_section_q01 + b*aeq_section_q02 + c*aeq_section_q04 + d*aeq_section_q06 
-        alc_pos ~~ 1*alc_pos
-        alc_pos ~ {' + '.join([f"{col}" for col in brain_columns])}
-        START(1.0) a b c d
-        DEFINE(ordinal) aeq_section_q01 aeq_section_q02 aeq_section_q04 aeq_section_q06 
+        g =~ a*PicVocab + b*ListSort + c*PattCompSpd + d*PicSeqMem + e*Reading 
+        g ~~ 1*g
+        g ~ {' + '.join([f"{col}" for col in brain_columns])}
+        START(1.0) a b c d e
     """
 
-    #3# Fit the model
     m = semopy.Model(mod)
-    r = m.fit (data_alc) #Note that here an additional regularization may be applied to handle large number of features. Plese read the documentation of the semopy for details
+    
+    r = m.fit (data_full)
     if r.success == True:
         ins = m.inspect(std_est=True)
-        res_var = ins.loc[(ins['lval'] == 'alc_pos') & (ins['rval'] == 'alc_pos'), 'Est. Std'].iloc[0]
+        res_var = ins.loc[(ins['lval'] == 'g') & (ins['rval'] == 'g'), 'Est. Std'].iloc[0]
     else: 
         err_msg = {'Message': ['Solver did not converge']}
         ins = pd.DataFrame(err_msg)
@@ -223,7 +214,7 @@ def display_gp_mean_uncertainty(kernel, optimizer, pbounds, BadIter):
     x1x2 = np.array(list(product(x, y)))
     X0p, X1p = x1x2[:, 0].reshape(50, 50), x1x2[:, 1].reshape(50, 50)
 
-    mu, sigma, gp = _posterior(gp, x_obs, y_obs, z_obs, x1x2)
+    mu, sigma, gp = posterior(gp, x_obs, y_obs, z_obs, x1x2)
 
     Zmu = np.reshape(mu, (50, 50))
     Zsigma = np.reshape(sigma, (50, 50))
@@ -310,12 +301,12 @@ def initialize_bo(ModelEmbedding, kappa, repetitions=False, DiffInit=None):
     utility = UtilityFunction(kind="ucb", kappa=kappa, xi=1e-1)
 
     # Number of burn in random initial samples
-    init_points =10
+    init_points =30 #10
     # Number of iterations of Bayesian optimization after burn in
     if repetitions:
         n_iter = 10
     else:
-        n_iter = 20
+        n_iter = 0 #20
 
     # Initialise optimizer
     optimizer = BayesianOptimization(f=None,
@@ -331,9 +322,10 @@ def initialize_bo(ModelEmbedding, kappa, repetitions=False, DiffInit=None):
 
 def run_bo(optimizer, utility, init_points, n_iter,
            pbounds, nbrs, RandomSeed, ModelEmbedding, model_config,
-           Y, AL, outputPath, BCT_Run,
+           Y, AL, outputPath, BCT_Run, NetworkID,
            repetitions=False, verbose=True):
 
+    temp_model_nums = [] ###Additional
     BadIters = np.empty(0)
     LastModel = -1
     Iter = 0
@@ -389,7 +381,7 @@ def run_bo(optimizer, utility, init_points, n_iter,
             # Call the objective function and evaluate the model/pipeline
             TempGM = BCT_Run[TempModelNum]
             target = sem_regression(TempModelNum, Y,
-                                    model_config['GMPrediction'], outputPath, TempGM, AL) #for corr _,target
+                                    model_config['GMPrediction'], outputPath, TempGM, NetworkID, AL) #for corr _,target
             if verbose:
                 print("Next Iteration")
                 print(Iter)
@@ -429,8 +421,9 @@ def run_bo(optimizer, utility, init_points, n_iter,
         # Update the GP data with the new coordinates and model performance
         register_sample = {'b1': TempLoc1, 'b2': TempLoc2}
         optimizer.register(params=register_sample, target=target)
+        temp_model_nums.append(TempModelNum) ###additonal
     pbar.close()
-    return BadIters
+    return BadIters, temp_model_nums
 
 
 def plot_bo_estimated_space(kappa, BadIter, optimizer, pbounds, ModelEmbedding,
@@ -469,8 +462,8 @@ def plot_bo_estimated_space(kappa, BadIter, optimizer, pbounds, ModelEmbedding,
     font_dict_title = {'fontsize': 25}
     font_dict_label = {'fontsize': 15}
     font_dict_label3 = {'fontsize': 15}
-    vmax = Zmu.max()
-    vmin = Zmu.min()
+    vmax = PredictedAcc.max()
+    vmin = PredictedAcc.min()
 
     cm = ['viridis', 'PRGn']
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(16,8))
@@ -506,9 +499,9 @@ def plot_bo_estimated_space(kappa, BadIter, optimizer, pbounds, ModelEmbedding,
 def plot_bo_evolution(kappa, x_obs, y_obs, z_obs, x, y, gp, vmax, vmin,
                       ModelEmbedding, PredictedAcc, output_path):
     fig, axs = plt.subplots(5, 3, figsize=(12,18))
-    n_samples = [5, 10, 20, 30, 50]
-    cm = ['viridis', 'PRGn']
-
+    n_samples = [5, 10, 15, 20, 30]
+    cm = ['viridis', 'seismic']
+    corr_iter = np.zeros(5)
     # Make sure that predictions for Regression analysis are on the correct
     # scale
     #PredictedAcc = PredictedAcc * 10
@@ -551,9 +544,9 @@ def plot_bo_evolution(kappa, x_obs, y_obs, z_obs, x, y, gp, vmax, vmin,
 
         ax = axs[idx,2]
         # For visualisation purposes
-        ax.set_xlim(-2.55, -2.25)
-        ax.set_ylim(-2.55, -2.25)
-        muModEmb = muModEmb * 10
+        ax.set_xlim(0, 0.25)
+        ax.set_ylim(0, 0.25)
+        muModEmb = muModEmb
 
         pcm=ax.scatter(muModEmb[PredictedAcc!=PredictedAcc.min()],
                        PredictedAcc[PredictedAcc!=PredictedAcc.min()],
@@ -562,11 +555,12 @@ def plot_bo_evolution(kappa, x_obs, y_obs, z_obs, x, y, gp, vmax, vmin,
         ax.set_ylim(PredictedAcc.max()+0.1, PredictedAcc.min()-0.1)
 
         ax.set_aspect('equal', 'box')
+        #corr_iter = spearmanr(muModEmb,PredictedAcc)
 
     fig.savefig(str(output_path / f'BOptEvolutionK{kappa}_with_Fisher.svg'),format='svg',dpi=300)
 
     corr = spearmanr(muModEmb,PredictedAcc)
-    return corr, muModEmb
+    return corr
 
 
 def plot_bo_repetions(ModelEmbedding, PredictedAcc, BestModelGPSpaceModIndex,
