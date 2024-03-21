@@ -13,4 +13,4 @@ All rights reserved.
 
 [3]	G. Meshcheryakov, A. A. Igolkina, and M. G. Samsonova, “semopy 2: A structural equation modeling package with random effects in python,” arXiv Prepr. arXiv2106.01140, 2021.
 
-[4]
+[4] D. Kristanto et al., "An Extended Active Learning Approach to Multiverse Analysis: Predictions of Latent Variables from Graph Theory Measures of the Human Connectome and Their Direct Replication*," 2023 Guardians Workshop (Guardians), Ladera Ranch, USA, CA, USA, 2023, pp. 1-13.
